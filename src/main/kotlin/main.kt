@@ -19,7 +19,7 @@ object DataBase {
     fun initLocation(): File {
         return try {
             File(readStringsFromFile(File("./data/info.txt")).first())
-        } catch (IOException: FileNotFoundException) {
+        } catch (ex: FileNotFoundException) {
             createBaseFile()
         }
     }
@@ -37,10 +37,49 @@ object DataBase {
         val destination = location(key)
         writeValue(key, value, destination)
     }
+
+    fun get(key: String): String? {
+        try {
+            val keyValuePairs = readStringsFromFile(location(key)).chunked(2)
+            keyValuePairs.forEach() { pair ->
+                if (pair[0] == key)
+                    return pair[1]
+            }
+            return null
+        }
+        catch (ex: FileNotFoundException) {
+            return null
+        }
+    }
+}
+
+object Interactor {
+    fun readCommand(): Boolean {
+        val args = readLine()?.split(" ")
+        if (args != null) {
+            when (args[0]) {
+                "exit" -> {
+                    return false
+                }
+                "add" -> {
+                    assert(args.size == 3)
+                    DataBase.add(args[1], args[2])
+                    return true
+                }
+                "get" -> {
+                    assert(args.size == 2)
+                    println(DataBase.get(args[1]))
+                    return true
+                }
+                else -> {
+                    return true
+                }
+            }
+        }
+        return true
+    }
 }
 
 fun main(args: Array<String>) {
-    println(DataBase.file.path)
-    val (key, value) = readLine()!!.split(" ")
-    DataBase.add(key, value)
+    while (Interactor.readCommand()) {}
 }
