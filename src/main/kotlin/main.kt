@@ -14,9 +14,9 @@ object DataBase {
         return baseFile
     }
 
-    val file: File = initLocation()
+    private val file: File = initLocation()
 
-    fun initLocation(): File {
+    private fun initLocation(): File {
         return try {
             File(readStringsFromFile(File("./data/info.txt")).first())
         } catch (ex: FileNotFoundException) {
@@ -33,9 +33,13 @@ object DataBase {
         file.appendText("$value\n")
     }
 
-    fun add(key: String, value: String) {
+    fun add(key: String, value: String): Boolean {
         val destination = location(key)
+        if (get(key) != null) {
+            return false
+        }
         writeValue(key, value, destination)
+        return true
     }
 
     fun get(key: String): String? {
@@ -51,6 +55,20 @@ object DataBase {
             return null
         }
     }
+
+    fun replace(key: String, value: String) {
+        val destination = location(key)
+        val keyValuePairs = readStringsFromFile(destination).chunked(2)
+        destination.bufferedWriter(Charset.defaultCharset()).use { out ->
+            keyValuePairs.forEach() {
+                out.write("${it[0]}\n")
+                if (it[0] == key)
+                    out.write("$value\n")
+                else
+                    out.write("${it[1]}\n")
+            }
+        }
+    }
 }
 
 object Interactor {
@@ -63,7 +81,8 @@ object Interactor {
                 }
                 "add" -> {
                     assert(args.size == 3)
-                    DataBase.add(args[1], args[2])
+                    if (!DataBase.add(args[1], args[2]))
+                        tryReplace(args[1], args[2])
                     return true
                 }
                 "get" -> {
@@ -77,6 +96,20 @@ object Interactor {
             }
         }
         return true
+    }
+
+    private fun tryReplace(key: String, value: String): Boolean {
+        println("This key has already been created")
+        println("Value: ${DataBase.get(key)}")
+        println("Do you want to replace value? (y/n)")
+        val args = readLine()?.split(" ")
+        if (args != null) {
+            if (args[0] == "y") {
+                DataBase.replace(key, value)
+                return true
+            }
+        }
+        return false
     }
 }
 
