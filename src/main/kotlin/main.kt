@@ -8,24 +8,36 @@ import java.nio.file.Path
 fun readStringsFromFile(file: File): List<String> = file.readLines(Charset.defaultCharset())
 
 object DataBase {
-    private fun createBaseFile(): File {
-        val baseFile = File("data/base.txt")
+    private fun createBaseFile(name: String): File {
+        val baseFile = File(name)
         baseFile.writeText("")
         return baseFile
     }
 
-    private val file: File = initLocation()
+    private val info = File("./data/info.txt")
 
-    private fun initLocation(): File {
+    private val hashMod = readStringsFromFile(info)[0].toInt()
+
+    private fun hash(key: String) = key.hashCode() % hashMod
+
+    private fun checkLocation(key: String): File {
+        val path = "./data/${hash(key)}.txt"
         return try {
-            File(readStringsFromFile(File("./data/info.txt")).first())
+            readStringsFromFile(File(path))
+            File(path)
         } catch (ex: FileNotFoundException) {
-            createBaseFile()
+            createBaseFile(path)
         }
     }
 
-    private fun location(key: String): File {
-        return file
+    private fun findLocation(key: String): File? {
+        val path = "./data/${hash(key)}.txt"
+        return try {
+            readStringsFromFile(File(path))
+            File(path)
+        } catch (ex: FileNotFoundException) {
+            null
+        }
     }
 
     private fun writeValue(key: String, value: String, file: File) {
@@ -34,7 +46,7 @@ object DataBase {
     }
 
     fun add(key: String, value: String): Boolean {
-        val destination = location(key)
+        val destination = checkLocation(key)
         if (get(key) != null) {
             return false
         }
@@ -43,21 +55,25 @@ object DataBase {
     }
 
     fun get(key: String): String? {
-        try {
-            val keyValuePairs = readStringsFromFile(location(key)).chunked(2)
-            keyValuePairs.forEach() { pair ->
-                if (pair[0] == key)
-                    return pair[1]
+        val destination = findLocation(key)
+        if (destination != null) {
+            try {
+                val keyValuePairs = readStringsFromFile(destination).chunked(2)
+                keyValuePairs.forEach() { pair ->
+                    if (pair[0] == key)
+                        return pair[1]
+                }
+                return null
+            } catch (ex: FileNotFoundException) {
+                return null
             }
-            return null
-        }
-        catch (ex: FileNotFoundException) {
+        } else {
             return null
         }
     }
 
     fun replace(key: String, value: String) {
-        val destination = location(key)
+        val destination = checkLocation(key)
         val keyValuePairs = readStringsFromFile(destination).chunked(2)
         destination.bufferedWriter(Charset.defaultCharset()).use { out ->
             keyValuePairs.forEach() {
@@ -67,6 +83,21 @@ object DataBase {
                 else
                     out.write("${it[1]}\n")
             }
+        }
+    }
+
+    fun delete(key: String) {
+        val destination = findLocation(key) ?: return
+        val keyValuePairs = readStringsFromFile(destination).chunked(2)
+        destination.bufferedWriter(Charset.defaultCharset()).use { out ->
+            keyValuePairs.forEach() {
+                if (it[0] != key) {
+                    out.write("${it[0]}\n")
+                    out.write("${it[1]}\n")
+                }
+            }
+            if (keyValuePairs.size == 1)
+                destination.delete()
         }
     }
 }
@@ -80,7 +111,7 @@ object Interactor {
                     return false
                 }
                 "add" -> {
-                    assert(args.size == 3)
+                    if (!checkEnoughArgs(args, 3)) return true
                     if (!DataBase.add(args[1], args[2]))
                         tryReplace(args[1], args[2])
                     return true
@@ -89,6 +120,10 @@ object Interactor {
                     assert(args.size == 2)
                     println(DataBase.get(args[1]))
                     return true
+                }
+                "del" -> {
+                    assert(args.size == 2)
+                    DataBase.delete(args[1])
                 }
                 else -> {
                     return true
@@ -109,6 +144,13 @@ object Interactor {
                 return true
             }
         }
+        return false
+    }
+
+    private fun checkEnoughArgs(args: List<String>, size: Int):Boolean {
+        if (args.size >= size) return true
+        println("Incorrect format")
+        println("${args[0]} must have ${size - 1} arguments")
         return false
     }
 }
