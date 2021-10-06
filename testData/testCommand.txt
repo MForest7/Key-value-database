@@ -1,0 +1,17 @@
+add a b
+add b c
+add c d
+get i
+get a
+add e f
+del e
+get a
+add g h
+add e f2
+get e
+get h
+add h i
+add i k
+add k l
+get x
+get e
