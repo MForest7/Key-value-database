@@ -11,11 +11,11 @@ object HashBasedBase {
 
     var hashMod = info.readText(Charset.defaultCharset()).drop(8).toInt()
     var size = readSize.readText(Charset.defaultCharset()).drop(5).toInt()
-    private const val limit = 2
+    private const val limit = 25
     private const val linkLength = 14L
 
     fun get(key: String): String? {
-        val hash = key.hashCode() % hashMod
+        val hash = getHash(key, hashMod)
         //println(hash)
         hashTable.seek(hash * (linkLength + 1))
         val beginOfKeyList = hashTable.readLine().toLong()
@@ -45,7 +45,7 @@ object HashBasedBase {
     fun add(key: String, value: String): Boolean {
         if (get(key) != null) return false
 
-        val hash = key.hashCode() % hashMod
+        val hash = getHash(key, hashMod)
         hashTable.seek(hash * (linkLength + 1))
         val linkToKeyList = hashTable.readLine().toLong()
         hashTable.seek(hash * (linkLength + 1))
@@ -68,7 +68,7 @@ object HashBasedBase {
     }
 
     fun delete(key: String): Boolean {
-        val hash = key.hashCode() % hashMod
+        val hash = getHash(key, hashMod)
         //println(hash)
         hashTable.seek(hash * (linkLength + 1))
         val beginOfKeyList = hashTable.readLine().toLong()
@@ -116,24 +116,28 @@ object HashBasedBase {
         for (hash in 0 until hashMod) {
             hashTable.seek(hash * (linkLength + 1))
             val linkToKeyList = hashTable.readLine().toLong()
+            if (linkToKeyList == 0L) continue
+
             val keys = getListKeysFrom(linkToKeyList)
 
-            var linkParent = 0L
             for ((key, linkToValue, linkUp) in keys) {
-                val newHash = key.hashCode() % newMod
+                val newHash = getHash(key, newMod)
                 val linkToKey = keyListsCopy.length()
+                hashTableCopy.seek(newHash * (linkLength + 1))
+                val linkParent = hashTableCopy.readLine().toLong()
                 hashTableCopy.seek(newHash * (linkLength + 1))
                 hashTableCopy.writeBytes("${padLong(linkToKey)}\n")
 
                 keyListsCopy.seek(keyListsCopy.length())
                 keyListsCopy.writeBytes("$key $linkToValue $linkParent\n")
-                linkParent = linkToKey
             }
         }
 
         copyTo("./kvdbData/copiedHashLinks.txt", "./kvdbData/hashLinks.txt")
         copyTo("./kvdbData/copiedKeyLists.txt", "./kvdbData/keyLists.txt")
-        setNewMod(hashMod * 2)
+        setNewMod(newMod)
+
+        println("DONE")
     }
 
     fun garbageClear() {
@@ -153,11 +157,10 @@ object HashBasedBase {
             var linkParent = 0L
             for ((key, linkValue, linkUp) in keys) {
                 values.seek(linkValue)
-                println(values.readLine()[0])
                 values.seek(linkValue)
                 if (values.readLine()[0] == '1') continue
 
-                val newHash = key.hashCode() % hashMod
+                val newHash = getHash(key, hashMod)
                 val linkToKey = keyListsCopy.length()
                 hashTableCopy.seek(newHash * (linkLength + 1))
                 hashTableCopy.writeBytes("${padLong(linkToKey)}\n")
@@ -190,13 +193,20 @@ object HashBasedBase {
         copyTo("./kvdbData/copiedValues.txt", "./kvdbData/values.txt")
     }
 
+    private fun getHash(key: String, mod: Int): Int {
+        val hash = key.hashCode() % mod
+        return if (hash < 0)
+            hash + mod
+        else
+            hash
+    }
+
     private fun padLong(x: Long): String = x.toString().padStart(linkLength.toInt(), '0')
 
     private fun setNewMod(newMod: Int) {
         hashMod = newMod
         val writer = RandomAccessFile(info, "rw")
-        writer.seek(8)
-        writer.writeBytes(hashMod.toString())
+        writer.writeBytes("hashMod=$hashMod")
     }
 
     private fun setNewSize(newSize: Int) {
