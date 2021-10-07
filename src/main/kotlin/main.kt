@@ -14,16 +14,23 @@ fun main(args: Array<String>) {
     //TreeBasedBase.appendNode(123)
     //println(TreeBasedBase.bitSequence("abc").contentToString())
     //TreeBasedBase.getNodeIDOrCreate("a")
-    HashBasedBase.reset()
+    /*HashBasedBase.reset()
     HashBasedBase.add("a", "b")
     HashBasedBase.add("b", "c")
     HashBasedBase.add("c", "d")
     HashBasedBase.delete("a")
     HashBasedBase.replace("c", "k")
     HashBasedBase.add("f", "b")
-    HashBasedBase.replace("c", "d")
+    HashBasedBase.replace("c", "d")*/
     //HashBasedBase.expand()
-    HashBasedBase.garbageClear()
+    HashBasedBase.reset()
+    val lines = readStringsFromFile(File("./testData/testExpand.txt"))
+    lines.forEach {
+        val (key, value) = it.split(" ")
+        HashBasedBase.add(key, value)
+    }
+    HashBasedBase.expand()
+    HashBasedBase.expand()
     return
     while (Interactor.runCommand(Interactor.receiveCommand())) {}
 }

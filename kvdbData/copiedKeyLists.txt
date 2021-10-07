@@ -1,4 +1,14 @@
 key linkValue linkUp
-f 0 0
-b 4 21
-c 8 0
+qwerty 61 0
+a 0 0
+aaa 16 33
+A 22 39
+i 43 0
+kek 55 49
+e2718 68 64
+c 4 0
+k 47 0
+e 8 0
+amazing 26 0
+m 51 105
+g 12 0

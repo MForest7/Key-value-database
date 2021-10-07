@@ -5,37 +5,99 @@ import javax.xml.crypto.Data
 import kotlin.test.*
 
 internal class TestBaseFunctions {
+    @BeforeTest
+    fun clearBase() {
+        HashBasedBase.reset()
+    }
+
     @Test
-    fun testBaseFunctions() {
-        DataBase.get("")
-        assertEquals(null, DataBase.get("a"),
-            "expected null, found value")
-        DataBase.add("aa", "b")
-        DataBase.add("A", "b")
-        DataBase.add("amazing", "b")
-        DataBase.add("", "b")
-        assertEquals(null, DataBase.get("a"),
-            "expected null, found value")
+    fun testAdd() {
+        HashBasedBase.get("")
+        assertEquals(null, HashBasedBase.get("a"))
+        HashBasedBase.add("aa", "b")
+        HashBasedBase.add("A", "b")
+        HashBasedBase.add("amazing", "b")
+        HashBasedBase.add("", "b")
+        assertEquals(null, HashBasedBase.get("a"))
+    }
 
-        DataBase.delete("a")
-        assertEquals(null, DataBase.get("a"),
-            "expected null, found value")
-        DataBase.add("a", "b")
-        assertEquals("b", DataBase.get("a"))
-        DataBase.add("aaa", "bbb")
-        assertEquals("bbb", DataBase.get("aaa"))
-        assertEquals("b", DataBase.get("a"))
+    @Test
+    fun testAddDelete() {
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+        HashBasedBase.add("a", "b")
+        assertEquals("b", HashBasedBase.get("a"))
+        HashBasedBase.add("aaa", "bbb")
+        HashBasedBase.delete("bbb")
+        assertEquals("bbb", HashBasedBase.get("aaa"))
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+    }
 
-        assertEquals("b", DataBase.get("a"))
-        DataBase.replace("a", "c")
-        assertEquals("c", DataBase.get("a"))
-        assertEquals("c", DataBase.get("a"))
-        DataBase.replace("a", "aaa")
-        assertEquals("aaa", DataBase.get("a"))
+    @Test
+    fun testDeleteFromEmpty() {
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+    }
 
-        DataBase.delete("a")
-        assertEquals(null, DataBase.get("a"))
-        DataBase.delete("a")
-        assertEquals(null, DataBase.get("a"))
+    @Test
+    fun testAddReplace() {
+        HashBasedBase.add("a", "b")
+        assertEquals("b", HashBasedBase.get("a"))
+        HashBasedBase.replace("a", "c")
+        assertEquals("c", HashBasedBase.get("a"))
+        assertEquals("c", HashBasedBase.get("a"))
+        HashBasedBase.replace("a", "aaa")
+        assertEquals("aaa", HashBasedBase.get("a"))
+    }
+
+    @Test
+    fun testReplaceDeleted() {
+        HashBasedBase.add("a", "b")
+        assertEquals("b", HashBasedBase.get("a"))
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+        HashBasedBase.replace("a", "c")
+        assertEquals("c", HashBasedBase.get("a"))
+    }
+
+    @Test
+    fun testDeleteReplaced() {
+        HashBasedBase.add("a", "b")
+        assertEquals("b", HashBasedBase.get("a"))
+        HashBasedBase.replace("a", "c")
+        assertEquals("c", HashBasedBase.get("a"))
+        HashBasedBase.delete("a")
+        assertEquals(null, HashBasedBase.get("a"))
+    }
+
+    @Test
+    fun testExpand() {
+        HashBasedBase.add("a", "b")
+        HashBasedBase.add("c", "d")
+        HashBasedBase.expand()
+        assertEquals("b", HashBasedBase.get("a"))
+        assertEquals("d", HashBasedBase.get("c"))
+    }
+
+    @Test
+    fun testExpandMoreData() {
+        val lines = readStringsFromFile(File("./testData/testExpand.txt"))
+        lines.forEach {
+            val (key, value) = it.split(" ")
+            HashBasedBase.add(key, value)
+        }
+        HashBasedBase.expand()
+        lines.forEach {
+            val (key, value) = it.split(" ")
+            assertEquals(value, HashBasedBase.get(key))
+        }
+        HashBasedBase.expand()
+        lines.forEach {
+            val (key, value) = it.split(" ")
+            assertEquals(value, HashBasedBase.get(key))
+        }
     }
 }
