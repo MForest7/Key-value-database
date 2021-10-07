@@ -1,0 +1,15 @@
+a b
+c d
+e f
+aaa bc
+define long
+d c
+throw exception
+return null
+create file
+while true
+if else
+get key
+fun main
+read int
+class node

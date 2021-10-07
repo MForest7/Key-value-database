@@ -100,4 +100,29 @@ internal class TestBaseFunctions {
             assertEquals(value, HashBasedBase.get(key))
         }
     }
+
+    @Test
+    fun testGarbageClear() {
+        val linesAdd = readStringsFromFile(File("./testData/testClearAdd.txt"))
+        val linesDel = readStringsFromFile(File("./testData/testClearDel.txt"))
+        val linesNeed = readStringsFromFile(File("./testData/testClearAdd.txt"))
+        linesAdd.forEach {
+            val (key, value) = it.split(" ")
+            HashBasedBase.add(key, value)
+        }
+        linesAdd.forEach {
+            val key = it
+            HashBasedBase.delete(key)
+        }
+        HashBasedBase.garbageClear()
+        linesNeed.forEach {
+            val (key, value) = it.split(" ")
+            assertEquals(value, HashBasedBase.get(key))
+        }
+        HashBasedBase.garbageClear()
+        linesNeed.forEach {
+            val (key, value) = it.split(" ")
+            assertEquals(value, HashBasedBase.get(key))
+        }
+    }
 }
