@@ -136,8 +136,6 @@ object HashBasedBase {
         copyTo("./kvdbData/copiedHashLinks.txt", "./kvdbData/hashLinks.txt")
         copyTo("./kvdbData/copiedKeyLists.txt", "./kvdbData/keyLists.txt")
         setNewMod(newMod)
-
-        println("DONE")
     }
 
     fun garbageClear() {
