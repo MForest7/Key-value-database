@@ -21,18 +21,18 @@ object Interactor {
                 }
                 "add" -> {
                     if (!checkEnoughArgs(args, 3)) return true
-                    if (!DataBase.add(args[1], args[2]))
+                    if (!HashBasedBase.add(args[1], args[2]))
                         tryReplace(args[1], args[2])
                     return true
                 }
                 "get" -> {
                     if (!checkEnoughArgs(args, 2)) return true
-                    println(DataBase.get(args[1]) ?: "No such key in base")
+                    println(HashBasedBase.get(args[1]) ?: "No such key in base")
                     return true
                 }
                 "del" -> {
                     if (!checkEnoughArgs(args, 2)) return true
-                    DataBase.delete(args[1])
+                    HashBasedBase.delete(args[1])
                     return true
                 }
                 else -> {
@@ -47,12 +47,12 @@ object Interactor {
 
     private fun tryReplace(key: String, value: String): Boolean {
         println("This key has already been created")
-        println("Value: ${DataBase.get(key)}")
+        println("Value: ${HashBasedBase.get(key)}")
         println("Do you want to replace value? (y/n)")
         val args = readLine()?.split(" ")
         if (args != null) {
             if (args[0] == "y") {
-                DataBase.replace(key, value)
+                HashBasedBase.replace(key, value)
                 return true
             }
         }

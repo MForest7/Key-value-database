@@ -14,8 +14,16 @@ fun main(args: Array<String>) {
     //TreeBasedBase.appendNode(123)
     //println(TreeBasedBase.bitSequence("abc").contentToString())
     //TreeBasedBase.getNodeIDOrCreate("a")
-    HashBasedBase.add("g", "h")
-    println(HashBasedBase.get("a"))
+    HashBasedBase.reset()
+    HashBasedBase.add("a", "b")
+    HashBasedBase.add("b", "c")
+    HashBasedBase.add("c", "d")
+    HashBasedBase.delete("a")
+    HashBasedBase.replace("c", "k")
+    HashBasedBase.add("f", "b")
+    HashBasedBase.replace("c", "d")
+    //HashBasedBase.expand()
+    HashBasedBase.garbageClear()
     return
     while (Interactor.runCommand(Interactor.receiveCommand())) {}
 }
