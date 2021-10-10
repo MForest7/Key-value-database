@@ -1,9 +1,9 @@
-return null
-b a
-fun main
-gh ij
-throw exception
-e f
-create file
-read int
-c d
+return
+b
+fun
+gh
+throw
+e
+create
+read
+c

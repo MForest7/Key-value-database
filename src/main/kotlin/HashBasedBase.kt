@@ -6,33 +6,23 @@ object HashBasedBase {
     private val hashTable = RandomAccessFile(File("./kvdbData/hashLinks.txt"), "rw")
     private val keyLists = RandomAccessFile(File("./kvdbData/keyLists.txt"), "rw")
     private val values = RandomAccessFile(File("./kvdbData/values.txt"), "rw")
-    private val info = File("./kvdbData/info.txt")
+    private val readInfo = File("./kvdbData/info.txt")
     private val readSize = File("./kvdbData/size.txt")
+    private val readUnused = File("./kvdbData/unused.txt")
 
-    var hashMod = info.readText(Charset.defaultCharset()).drop(8).toInt()
     var size = readSize.readText(Charset.defaultCharset()).drop(5).toInt()
+    private var hashMod = readInfo.readText(Charset.defaultCharset()).drop(8).toInt()
+    private var unused = readUnused.readText(Charset.defaultCharset()).drop(7).toInt()
     private const val limit = 25
     private const val linkLength = 14L
 
     fun get(key: String): String? {
-        val hash = getHash(key, hashMod)
-        //println(hash)
-        hashTable.seek(hash * (linkLength + 1))
-        val beginOfKeyList = hashTable.readLine().toLong()
-        //println(beginOfKeyList)
+        val beginOfKeyList = getKeyList(key)
         if (beginOfKeyList == 0L) return null
 
         keyLists.seek(beginOfKeyList)
-        var linkToValue = 0L
-        while (true) {
-            val (keyFromBase, linkValueStr, linkUpStr) = keyLists.readLine().split(" ")
-            if (keyFromBase == key) {
-                linkToValue = linkValueStr.toLong()
-                break
-            }
-            if (linkUpStr.toLong() == 0L) return null
-            keyLists.seek(linkUpStr.toLong())
-        }
+        val linkToValue = getKeyFromList(key, beginOfKeyList)
+        if (linkToValue == null) return null
 
         values.seek(linkToValue)
         val (deleted, value) = values.readLine().split(" ")
@@ -46,8 +36,7 @@ object HashBasedBase {
         if (get(key) != null) return false
 
         val hash = getHash(key, hashMod)
-        hashTable.seek(hash * (linkLength + 1))
-        val linkToKeyList = hashTable.readLine().toLong()
+        val linkToKeyList = getKeyList(key)
         hashTable.seek(hash * (linkLength + 1))
         hashTable.writeBytes("${padLong(keyLists.length())}\n")
 
@@ -68,24 +57,12 @@ object HashBasedBase {
     }
 
     fun delete(key: String): Boolean {
-        val hash = getHash(key, hashMod)
-        //println(hash)
-        hashTable.seek(hash * (linkLength + 1))
-        val beginOfKeyList = hashTable.readLine().toLong()
-        //println(beginOfKeyList)
+        val beginOfKeyList = getKeyList(key)
         if (beginOfKeyList == 0L) return false
 
         keyLists.seek(beginOfKeyList)
-        var linkToValue = 0L
-        while (true) {
-            val (keyFromBase, linkValueStr, linkUpStr) = keyLists.readLine().split(" ")
-            if (keyFromBase == key) {
-                linkToValue = linkValueStr.toLong()
-                break
-            }
-            if (linkUpStr.toLong() == 0L) return false
-            keyLists.seek(linkUpStr.toLong())
-        }
+        val linkToValue = getKeyFromList(key, beginOfKeyList)
+        if (linkToValue == null) return false
 
         values.seek(linkToValue)
         val (deleted, value) = values.readLine().split(" ")
@@ -94,6 +71,8 @@ object HashBasedBase {
         } else {
             values.seek(linkToValue)
             values.writeBytes("1")
+            setNewUnused(unused + 1)
+            if (unused > size / 2) garbageClear()
             true
         }
     }
@@ -103,7 +82,7 @@ object HashBasedBase {
         add(key, value)
     }
 
-    private data class keyNode(val key: String, val linkValue: Long, val linkUp: Long);
+    private data class keyNode(val key: String, val linkValue: Long, val linkUp: Long)
 
     fun expand() {
         val newMod = hashMod * 2
@@ -156,7 +135,8 @@ object HashBasedBase {
             for ((key, linkValue, linkUp) in keys) {
                 values.seek(linkValue)
                 values.seek(linkValue)
-                if (values.readLine()[0] == '1') continue
+                if (values.readLine()[0] == '1')
+                    continue
 
                 val newHash = getHash(key, hashMod)
                 val linkToKey = keyListsCopy.length()
@@ -176,11 +156,15 @@ object HashBasedBase {
         copyTo("./kvdbData/copiedHashLinks.txt", "./kvdbData/hashLinks.txt")
         copyTo("./kvdbData/copiedKeyLists.txt", "./kvdbData/keyLists.txt")
         copyTo("./kvdbData/copiedValues.txt", "./kvdbData/values.txt")
+
+        setNewSize(size - unused)
+        setNewUnused(0)
     }
 
     fun reset() {
         setNewMod(4)
         setNewSize(0)
+        setNewUnused(0)
 
         setHashTableCopy(hashMod)
         setKeyListsCopy()
@@ -189,6 +173,22 @@ object HashBasedBase {
         copyTo("./kvdbData/copiedHashLinks.txt", "./kvdbData/hashLinks.txt")
         copyTo("./kvdbData/copiedKeyLists.txt", "./kvdbData/keyLists.txt")
         copyTo("./kvdbData/copiedValues.txt", "./kvdbData/values.txt")
+    }
+
+    private fun getKeyList(key: String): Long {
+        val hash = getHash(key, hashMod)
+        hashTable.seek(hash * (linkLength + 1))
+        return hashTable.readLine().toLong()
+    }
+
+    private fun getKeyFromList(key: String, link: Long): Long? {
+        keyLists.seek(link)
+        while (true) {
+            val (keyFromBase, linkValueStr, linkUpStr) = keyLists.readLine().split(" ")
+            if (keyFromBase == key) return linkValueStr.toLong()
+            if (linkUpStr.toLong() == 0L) return null
+            keyLists.seek(linkUpStr.toLong())
+        }
     }
 
     private fun getHash(key: String, mod: Int): Int {
@@ -203,7 +203,7 @@ object HashBasedBase {
 
     private fun setNewMod(newMod: Int) {
         hashMod = newMod
-        val writer = RandomAccessFile(info, "rw")
+        val writer = RandomAccessFile(readInfo, "rw")
         writer.writeBytes("hashMod=$hashMod")
     }
 
@@ -211,7 +211,16 @@ object HashBasedBase {
         size = newSize
         val writer = RandomAccessFile(readSize, "rw")
         writer.seek(5)
+        writer.setLength(5)
         writer.writeBytes(size.toString())
+    }
+
+    private fun setNewUnused(newUnused: Int) {
+        unused = newUnused
+        val writer = RandomAccessFile(readUnused, "rw")
+        writer.seek(7)
+        writer.setLength(7)
+        writer.writeBytes(unused.toString())
     }
 
     private fun copyTo(fileName: String, copyName: String): RandomAccessFile {

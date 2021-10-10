@@ -1,6 +1,6 @@
 object Interactor {
     fun receiveCommand(): List <String>? {
-        val args = readLine()?:null
+        val args = readLine()
         return if (args == null) {
             null
         } else {
@@ -34,6 +34,12 @@ object Interactor {
                     if (!checkEnoughArgs(args, 2)) return true
                     HashBasedBase.delete(args[1])
                     return true
+                }
+                "reset" -> {
+                    HashBasedBase.reset()
+                }
+                "clear" -> {
+                    HashBasedBase.garbageClear()
                 }
                 else -> {
                     println("Incorrect format")

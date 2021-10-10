@@ -14,9 +14,7 @@ internal class TestBaseFunctions {
     fun testAdd() {
         HashBasedBase.get("")
         assertEquals(null, HashBasedBase.get("a"))
-        HashBasedBase.add("aa", "b")
         HashBasedBase.add("A", "b")
-        HashBasedBase.add("amazing", "b")
         HashBasedBase.add("", "b")
         assertEquals(null, HashBasedBase.get("a"))
     }
@@ -26,10 +24,8 @@ internal class TestBaseFunctions {
         HashBasedBase.delete("a")
         assertEquals(null, HashBasedBase.get("a"))
         HashBasedBase.add("a", "b")
+        HashBasedBase.delete("b")
         assertEquals("b", HashBasedBase.get("a"))
-        HashBasedBase.add("aaa", "bbb")
-        HashBasedBase.delete("bbb")
-        assertEquals("bbb", HashBasedBase.get("aaa"))
         HashBasedBase.delete("a")
         assertEquals(null, HashBasedBase.get("a"))
     }
@@ -71,58 +67,5 @@ internal class TestBaseFunctions {
         assertEquals("c", HashBasedBase.get("a"))
         HashBasedBase.delete("a")
         assertEquals(null, HashBasedBase.get("a"))
-    }
-
-    @Test
-    fun testExpand() {
-        HashBasedBase.add("a", "b")
-        HashBasedBase.add("c", "d")
-        HashBasedBase.expand()
-        assertEquals("b", HashBasedBase.get("a"))
-        assertEquals("d", HashBasedBase.get("c"))
-    }
-
-    @Test
-    fun testExpandMoreData() {
-        val lines = readStringsFromFile(File("./testData/testExpand.txt"))
-        lines.forEach {
-            val (key, value) = it.split(" ")
-            HashBasedBase.add(key, value)
-        }
-        HashBasedBase.expand()
-        lines.forEach {
-            val (key, value) = it.split(" ")
-            assertEquals(value, HashBasedBase.get(key))
-        }
-        HashBasedBase.expand()
-        lines.forEach {
-            val (key, value) = it.split(" ")
-            assertEquals(value, HashBasedBase.get(key))
-        }
-    }
-
-    @Test
-    fun testGarbageClear() {
-        val linesAdd = readStringsFromFile(File("./testData/testClearAdd.txt"))
-        val linesDel = readStringsFromFile(File("./testData/testClearDel.txt"))
-        val linesNeed = readStringsFromFile(File("./testData/testClearAdd.txt"))
-        linesAdd.forEach {
-            val (key, value) = it.split(" ")
-            HashBasedBase.add(key, value)
-        }
-        linesAdd.forEach {
-            val key = it
-            HashBasedBase.delete(key)
-        }
-        HashBasedBase.garbageClear()
-        linesNeed.forEach {
-            val (key, value) = it.split(" ")
-            assertEquals(value, HashBasedBase.get(key))
-        }
-        HashBasedBase.garbageClear()
-        linesNeed.forEach {
-            val (key, value) = it.split(" ")
-            assertEquals(value, HashBasedBase.get(key))
-        }
     }
 }

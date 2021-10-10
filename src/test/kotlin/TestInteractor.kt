@@ -10,6 +10,7 @@ internal class TestInteractor {
 
     @BeforeTest
     fun setUp() {
+        HashBasedBase.reset()
         System.setOut(PrintStream(stream))
     }
 
