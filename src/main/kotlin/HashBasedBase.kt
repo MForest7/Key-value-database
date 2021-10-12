@@ -58,7 +58,8 @@ object HashBasedBase {
 
         val hash = getHash(key, hashMod)
         val linkToKeyList = getKeyList(key)
-        append(hashTable, "${padLong(keyLists.length())}\n")
+        hashTable.seek(hash * (linkLength + 1))
+        hashTable.writeBytes("${padLong(keyLists.length())}\n")
         val linkToValue = values.length()
         append(keyLists, "$key $linkToValue $linkToKeyList\n")
         append(values, "0 $value\n")
