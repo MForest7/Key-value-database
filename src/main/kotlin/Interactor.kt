@@ -1,4 +1,10 @@
+/**
+ * Объект Interactor реализует взаимодействие с пользователем с помощью стандартного потока ввода
+ */
 object Interactor {
+    /**
+     * Метод receiveCommand принимает команду пользователя и разбивает её на компоненты (формат command key value)
+     */
     fun receiveCommand(): List <String>? {
         val args = readLine()
         return if (args == null) {
@@ -12,6 +18,9 @@ object Interactor {
         }
     }
 
+    /**
+     * Метод runCommand принимает аргументы команды и выполняет её
+     */
     fun runCommand(args: List<String>?): Boolean {
         if (args != null) {
             if (args.isEmpty()) return true
@@ -35,6 +44,11 @@ object Interactor {
                     HashBasedBase.delete(args[1])
                     return true
                 }
+                "replace" -> {
+                    if (!checkEnoughArgs(args, 3)) return true
+                    HashBasedBase.replace(args[1], args[2])
+                    return true
+                }
                 "reset" -> {
                     HashBasedBase.reset()
                 }
@@ -51,6 +65,9 @@ object Interactor {
         return true
     }
 
+    /**
+     * Метод tryReplace вызывается после попытки выполнения команды add и выводит предупреждающее сообщение о том, что требуемое key содержится в базе
+     */
     private fun tryReplace(key: String, value: String): Boolean {
         println("This key has already been created")
         println("Value: ${HashBasedBase.get(key)}")
@@ -65,6 +82,9 @@ object Interactor {
         return false
     }
 
+    /**
+     * Метод checkEnoughArgs проверяет, что команда вызвана с корректным количеством аргументов
+     */
     private fun checkEnoughArgs(args: List<String>, size: Int):Boolean {
         if (args.size >= size) return true
         println("Incorrect format")

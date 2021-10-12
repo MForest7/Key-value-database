@@ -20,7 +20,7 @@ internal class TestSquares {
 
         lines.forEach {
             val (key, value) = it.split(" ")
-            assertEquals(value, HashBasedBase.get(key))
+            assertEquals(value, HashBasedBase.get(key), "$key")
         }
     }
 }
